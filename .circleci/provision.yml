@@ -5,7 +5,7 @@ orbs:
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
   gh: circleci/github-cli@2.2
-  platform-team: https://raw.githubusercontent.com/stone-monkeys/platform-team-configs/refs/heads/main/orbs/platform-team.yml
+  platform-team: https://raw.githubusercontent.com/CircleCI-Labs/platform-team-configs/refs/heads/main/orbs/platform-team.yml
 
 parameters:
   template_repo:
