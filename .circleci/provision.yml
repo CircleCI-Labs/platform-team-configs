@@ -5,7 +5,17 @@ orbs:
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
   gh: circleci/github-cli@2.2
-  platform-team: https://raw.githubusercontent.com/CircleCI-Labs/platform-team-configs/refs/heads/main/orbs/platform-team.yml
+  platform-team: https://raw.githubusercontent.com/stone-monkeys/platform-team-configs/refs/heads/main/orbs/platform-team.yml
+
+parameters:
+  template_repo:
+    type: string
+    description: "Template repository to use as base"
+    default: ""
+  target_repo:
+    type: string
+    description: "Target repository where infrastructure will be provisioned"
+    default: ""
 
 jobs:
   configure-cci:
@@ -21,12 +31,57 @@ jobs:
           commit_sha: "92808ad67ed663b767af230bce32c2ba25ead147"
       - platform-team/setup-tf-vars
       - aws-cli/setup:
-          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
+          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}"
           role_session_name: "fe-provider-demo-<< pipeline.number >>"
       - run:
           name: Generate backend config
           command: |
-            echo "key=\"fe-platform-demo/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
+            echo "key=\"platform-team-configs/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
+      - terraform/apply:
+          backend_config_file: backend.conf
+          path: terraform/pipeline-terraform
+          var_file: app.tfvars
+      - gh/setup
+      - run:
+          name: Trigger initial CI/CD pipeline with empty commit
+          command: |
+            # Use GitHub CLI to clone (handles auth automatically) and create empty commit
+            gh repo clone ${GITHUB_ORG}/${TARGET_REPO} /tmp/trigger-repo -- --depth=1
+            cd /tmp/trigger-repo
+            
+            # Configure git for the commit
+            git config user.name "Platform Team Bot"
+            git config user.email "platform-team@circleci.com"
+            
+            # Create and push empty commit to trigger CI/CD
+            git commit --allow-empty -m "chore: trigger initial CI/CD pipeline
+
+            This empty commit was created automatically by the platform team
+            to trigger the initial CI/CD pipeline for this repository."
+            
+            # Push using GitHub CLI (handles auth)
+            git push origin main
+
+  configure-cci-from-ui:
+    docker:
+      - image: cimg/deploy:2025.01.1
+    environment:
+      TEMPLATE_REPO: << pipeline.parameters.template_repo >>
+      TARGET_REPO: << pipeline.parameters.target_repo >>
+    steps:
+      - checkout
+      - platform-team/parse-webhook-payload
+      - platform-team/build-terraform-provider-circleci:
+          provider_version: "0.0.1"
+          commit_sha: "92808ad67ed663b767af230bce32c2ba25ead147"
+      - platform-team/setup-tf-vars
+      - aws-cli/setup:
+          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}"
+          role_session_name: "fe-provider-demo-<< pipeline.number >>"
+      - run:
+          name: Generate backend config
+          command: |
+            echo "key=\"platform-team-configs/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
       - terraform/apply:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
@@ -60,5 +115,15 @@ workflows:
         - << pipeline.trigger_parameters.webhook.body >>
     jobs:
       - configure-cci:
+          context: 
+            - centralized-asset-github-envs
+
+  provision-infrastructure-via-circleci:
+    when:
+      and:
+        - equal: [ api, << pipeline.trigger_source >> ]
+        - << pipeline.parameters.target_repo >>
+    jobs:
+      - configure-cci-from-ui:
           context: 
             - centralized-asset-github-envs
