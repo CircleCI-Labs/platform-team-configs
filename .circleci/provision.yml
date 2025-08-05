@@ -7,6 +7,18 @@ orbs:
   gh: circleci/github-cli@2.2
   platform-team: https://raw.githubusercontent.com/CircleCI-Labs/platform-team-configs/refs/heads/main/orbs/platform-team.yml
 
+parameters:
+  template_repo:
+    type: enum
+    description: "Template repository to use as base"
+    default: "python-starter-template"
+    enum: ["python-starter-template", "node-starter-template"]
+  target_repo:
+    type: string
+    description: "Target repository where infrastructure will be provisioned"
+    default: ""
+
+
 jobs:
   configure-cci:
     docker:
@@ -15,7 +27,18 @@ jobs:
       WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
     steps:
       - checkout
-      - platform-team/parse-webhook-payload
+      - when:
+          condition:
+            equal: [ webhook, << pipeline.trigger_source >> ]
+          steps:
+            - platform-team/parse-webhook-payload
+      - when:
+          condition:
+            equal: [ api, << pipeline.trigger_source >> ]
+          steps:
+            - platform-team/parse-ui-parameters:
+                template_repo: << pipeline.parameters.template_repo >>
+                target_repo: << pipeline.parameters.target_repo >>
       - platform-team/build-terraform-provider-circleci:
           provider_version: "0.0.1"
           commit_sha: "92808ad67ed663b767af230bce32c2ba25ead147"
@@ -55,9 +78,15 @@ jobs:
 workflows:
   provision-infrastructure:
     when:
-      and:
-        - equal: [ webhook, << pipeline.trigger_source >> ]
-        - << pipeline.trigger_parameters.webhook.body >>
+      or:
+        - and:
+            - equal: [ webhook, << pipeline.trigger_source >> ]
+            - << pipeline.trigger_parameters.webhook.body >>
+        - and:
+            - equal: [ api, << pipeline.trigger_source >> ]
+            - << pipeline.parameters.template_repo >>
+            - not:
+                equal: [ "", << pipeline.parameters.target_repo >> ]
     jobs:
       - configure-cci:
           context: 
