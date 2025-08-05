@@ -74,6 +74,23 @@ commands:
             echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
             source $BASH_ENV
 
+  parse-ui-parameters:
+    parameters:
+      template_repo:
+        type: enum
+        enum: ["python-starter-template", "node-starter-template"]
+      target_repo:
+        type: string
+    steps:
+      - run:
+          name: Parse UI parameters
+          command: |
+            echo "TEMPLATE_REPO: << parameters.template_repo >>"
+            echo "TARGET_REPO: << parameters.target_repo >>"
+            echo "export TEMPLATE_REPO=<< parameters.template_repo >>" >> $BASH_ENV
+            echo "export TARGET_REPO=<< parameters.target_repo >>" >> $BASH_ENV
+            source $BASH_ENV
+
   setup-tf-vars:
     steps:
       - run:
