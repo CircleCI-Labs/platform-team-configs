@@ -3,6 +3,7 @@ version: 2.1
 # Import the team's config as an orb
 orbs:
   team-config: << pipeline.parameters.config-override-url >>
+  snyk: snyk/snyk@2.3.0
 
 # Define parameters for configuration
 parameters:
@@ -19,6 +20,8 @@ workflows:
           name: "Build Application"
           override-with: team-config/build
           context: share-docker-publishing
+      - security-scan:
+          name: "Security Scan"
       - test:
           name: "Test Application"
           override-with: team-config/test
@@ -29,6 +32,7 @@ workflows:
           override-with: team-config/deploy
           requires:
             - "Test Application"
+            - "Security Scan"
 
 jobs:
   build:
@@ -43,6 +47,27 @@ jobs:
       - image: cimg/base:stable
     steps:
       - run: echo "Running tests..."
+
+  security-scan:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            if [ -f requirements.txt ]; then
+              pip install -r requirements.txt
+            elif [ -f Pipfile ]; then
+              pip install pipenv && pipenv install --dev
+            elif [ -f pyproject.toml ]; then
+              pip install -e .
+            fi
+      - snyk/scan:
+          fail-on-issues: false
+          monitor-on-build: false
+          severity-threshold: high
+          additional-arguments: "--all-projects"
 
   deploy:
     docker:
