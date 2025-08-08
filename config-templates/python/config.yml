@@ -22,6 +22,7 @@ workflows:
           context: share-docker-publishing
       - security-scan:
           name: "Security Scan"
+          context: platform-security
       - test:
           name: "Test Application"
           override-with: team-config/test
