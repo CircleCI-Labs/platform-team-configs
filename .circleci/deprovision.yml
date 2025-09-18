@@ -21,9 +21,6 @@ jobs:
       TARGET_REPO: << pipeline.parameters.target_repo >>
     steps:
       - checkout
-      - platform-team/build-terraform-provider-circleci:
-          provider_version: "0.2.0"
-          commit_sha: "c25112d15d335388a2d980b70a8c3554e7f108d3"
       - aws-cli/setup:
           role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
           role_session_name: "fe-provider-demo-<< pipeline.number >>"
