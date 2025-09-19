@@ -20,10 +20,10 @@ jobs:
     environment:
       TARGET_REPO: << pipeline.parameters.target_repo >>
       # Enable Terraform debug logging
-      TF_LOG: DEBUG
+      TF_LOG: TRACE
       TF_LOG_PATH: ./terraform-debug.log
       # Enable provider debug logging
-      TF_LOG_PROVIDER: DEBUG
+      TF_LOG_PROVIDER: TRACE
     steps:
       - checkout
       - platform-team/build-terraform-provider-circleci:
