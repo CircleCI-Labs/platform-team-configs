@@ -19,6 +19,11 @@ jobs:
       - image: cimg/deploy:2025.01.1
     environment:
       TARGET_REPO: << pipeline.parameters.target_repo >>
+      # Enable Terraform debug logging
+      TF_LOG: DEBUG
+      TF_LOG_PATH: ./terraform-debug.log
+      # Enable provider debug logging
+      TF_LOG_PROVIDER: DEBUG
     steps:
       - checkout
       - platform-team/build-terraform-provider-circleci:
@@ -36,6 +41,14 @@ jobs:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
+      - run:
+          name: Output debug logs on failure
+          command: |
+            if [[ -f ./terraform-debug.log ]]; then
+              echo "=== TERRAFORM DEBUG LOG ==="
+              tail -100 ./terraform-debug.log
+            fi
+          when: on_fail
 
 workflows:
   destroy_project:

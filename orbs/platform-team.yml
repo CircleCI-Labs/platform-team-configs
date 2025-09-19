@@ -42,7 +42,7 @@ commands:
             echo "Using commit SHA: $(cat /tmp/terraform-provider-circleci.txt)"
       - restore_cache:
           keys:
-            - terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
+            - terraform-provider-v1-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
       - go/install:
           version: "1.22.3"
       - run:
@@ -58,7 +58,7 @@ commands:
               echo "Provider built and copied to $PROVIDER_PATH"
             fi
       - save_cache:
-          key: terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
+          key: terraform-provider-v1-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
           paths:
             - ~/.terraform.d/plugins/circleci.com/circleci/circleci/<< parameters.provider_version >>/linux_amd64
 
