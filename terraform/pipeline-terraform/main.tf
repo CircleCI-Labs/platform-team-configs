@@ -36,8 +36,6 @@ resource "circleci_project" "team_project" {
   #for_each = toset(var.appteam_pipeline_profiles)
   name             = var.appteam_pipeline_profiles.application_name
   organization_id  = var.org_info.organization_id
-
-  depends_on = [github_repository.new_repo]
   
 }
 
@@ -62,7 +60,6 @@ resource "circleci_context_environment_variable" "team_variables" {
   name       = each.value
   value      = var.app_team_passwords[each.key]
 
-   depends_on = [circleci_project.team_project]
 }
 
 # Add project restriction to existing context
@@ -70,8 +67,6 @@ resource "circleci_context_restriction" "existing_context_project_restriction" {
   context_id = data.circleci_context.existing_context.id
   type       = "project"
   value      = circleci_project.team_project.id
-
-  depends_on = [circleci_project.team_project]
 
 }
 
@@ -85,7 +80,6 @@ resource "circleci_pipeline" "default" {
   config_source_provider           = "github_app"
   config_source_repo_external_id   = data.github_repository.platform_configs_repo.repo_id
 
-  depends_on = [circleci_project.team_project]
 }
 
 resource "circleci_trigger" "default" {
@@ -99,5 +93,4 @@ resource "circleci_trigger" "default" {
   config_ref                    = "main"
   checkout_ref                  = ""
 
-  depends_on = [circleci_project.team_project]
 }
