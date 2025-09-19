@@ -39,6 +39,9 @@ jobs:
             - platform-team/parse-ui-parameters:
                 template_repo: << pipeline.parameters.template_repo >>
                 target_repo: << pipeline.parameters.target_repo >>
+      - platform-team/build-terraform-provider-circleci:
+          provider_version: "0.2.0"
+          commit_sha: "c25112d15d335388a2d980b70a8c3554e7f108d3"
       - platform-team/setup-tf-vars
       - aws-cli/setup:
           role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"

@@ -108,4 +108,4 @@ commands:
             echo "ORG_SLUG: $ORG_SLUG"
             echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
             echo "TEMPLATE_OWNER: $TEMPLATE_OWNER"
-            circleci env subst < terraform/pipeline-terraform/app.tfvars.template > terraform/pipeline-terraform/app.tfvars
+            circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
