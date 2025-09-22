@@ -41,6 +41,10 @@ jobs:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
+          
+      - store_artifacts:
+          path: ./terraform-debug.log
+          destination: logs
       - run:
           name: Output debug logs on failure
           command: |
