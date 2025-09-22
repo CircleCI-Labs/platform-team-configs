@@ -76,4 +76,5 @@ output "context_info" {
   value       = {
     for k, val in var.app_team_passwords : k => "name: ${k}, value:${val}, context_id: ${circleci_context.team_context.id}"
   }
+  sensitive = true
 }
