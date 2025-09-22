@@ -70,11 +70,3 @@ output "debug_platform_configs_repo_id" {
   description = "Numeric repo ID of the platform-team-configs repository"
   value = data.github_repository.platform_configs_repo.repo_id
 }
-
-output "context_info" {
-  description = "context"
-  value       = {
-    for k, val in var.app_team_passwords : k => "name: ${k}, value:${val}, context_id: ${circleci_context.team_context.id}"
-  }
-  sensitive = true
-}
