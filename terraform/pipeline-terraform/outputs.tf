@@ -74,6 +74,6 @@ output "debug_platform_configs_repo_id" {
 output "context_info" {
   description = "context"
   value       = {
-    for k, val in var.app_team_passwords : "name: ${k}, value:${val}, context_id: ${circleci_context.team_context.id}"
+    for k, val in var.app_team_passwords : k => "name: ${k}, value:${val}, context_id: ${circleci_context.team_context.id}"
   }
 }
