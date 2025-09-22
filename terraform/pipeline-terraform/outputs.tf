@@ -70,3 +70,11 @@ output "debug_platform_configs_repo_id" {
   description = "Numeric repo ID of the platform-team-configs repository"
   value = data.github_repository.platform_configs_repo.repo_id
 }
+
+output "context_info" {
+  #loop all created contexts, and look up the set of values to inject
+  for_each = var.appteam_pipeline_profiles.context_variables
+
+  description = "context for ${each.key}"
+  value      = "name: ${each.key}, value:${var.app_team_passwords[each.key]}, context_id: ${circleci_context.team_context.id}"
+}
