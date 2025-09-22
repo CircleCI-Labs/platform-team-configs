@@ -54,10 +54,10 @@ resource "circleci_context_restriction" "context_restrictions" {
 
 resource "circleci_context_environment_variable" "team_variables" {
   #loop all created contexts, and look up the set of values to inject
-  for_each = var.appteam_pipeline_profiles.context_variables
+  for_each = toset(var.appteam_pipeline_profiles.context_variables)
 
   context_id = circleci_context.team_context.id
-  name       = each.value
+  name       = each.key
   value      = var.app_team_passwords[each.key]
 }
 
