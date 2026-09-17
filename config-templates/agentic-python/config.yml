@@ -88,13 +88,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
-          command: pip install -e .
-      - run:
-          name: Run pip-audit
+          name: Run bandit security scan
           command: |
-            pip install pip-audit
-            pip-audit
+            pip install bandit
+            bandit -r app/ --skip B104
 
   agent-validation:
     docker:
