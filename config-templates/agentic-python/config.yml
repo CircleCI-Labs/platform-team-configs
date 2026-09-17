@@ -1,0 +1,135 @@
+# Agentic Python PR validation template
+#
+# Authoritative workflow for Python agentic services.
+# Teams customize build/unit-test/integration-test via .circleci/team-config.yml.
+# security-scan and agent-validation are locked by the platform team.
+#
+# Usage (cross-org central config):
+#   config-provider: github_app
+#   config-repo-id: <platform-team-configs repo id>
+#   config-file: config-templates/agentic-python/config.yml
+#   checkout-provider: github_app
+#   checkout-repo-id: <application repo id>
+#
+# Fallback (URL-orb, same-repo config):
+#   Copy this file to the application repo .circleci/config.yml.
+#   The team-config.yml URL orb resolves from the checkout repo.
+
+version: 2.1
+
+parameters:
+  team-config-url:
+    type: string
+    default: "https://raw.githubusercontent.com/<< pipeline.git.repo_owner >>/<< pipeline.git.repo_name >>/<< pipeline.git.revision >>/.circleci/team-config.yml"
+
+orbs:
+  team-config: << pipeline.parameters.team-config-url >>
+
+# ---------------------------------------------------------------------------
+# Team-overridable jobs (defaults; replaced by team-config orb via override-with)
+# ---------------------------------------------------------------------------
+
+jobs:
+  build:
+    docker:
+      - image: cimg/python:3.12
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -e ".[test]"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  unit-test:
+    docker:
+      - image: cimg/python:3.12
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Run unit tests
+          command: python -m pytest tests/unit/ --junitxml=test-results/pytest.xml -v
+      - store_test_results:
+          path: test-results
+
+  integration-test:
+    docker:
+      - image: cimg/python:3.12
+      - image: cimg/postgres:15.0
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: commerce
+    resource_class: small
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/commerce
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Run integration tests
+          command: python -m pytest tests/integration/ -m integration --junitxml=test-results/integration.xml -v
+      - store_test_results:
+          path: test-results
+
+# ---------------------------------------------------------------------------
+# Locked jobs -- platform team controls these
+# ---------------------------------------------------------------------------
+
+  security-scan:
+    docker:
+      - image: cimg/python:3.12
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install -e .
+      - run:
+          name: Run pip-audit
+          command: |
+            pip install pip-audit
+            pip-audit
+
+  agent-validation:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    steps:
+      - run:
+          name: All gates passed
+          command: echo "All validation gates passed"
+
+# ---------------------------------------------------------------------------
+# Workflow -- locked by platform team
+# ---------------------------------------------------------------------------
+
+workflows:
+  pr-validation:
+    jobs:
+      - build:
+          name: build
+          override-with: team-config/build
+      - unit-test:
+          name: unit-test
+          override-with: team-config/unit-test
+          requires:
+            - build
+      - integration-test:
+          name: integration-test
+          override-with: team-config/integration-test
+          requires:
+            - build
+      - security-scan:
+          requires:
+            - build
+      - agent-validation:
+          requires:
+            - unit-test
+            - integration-test
+            - security-scan
