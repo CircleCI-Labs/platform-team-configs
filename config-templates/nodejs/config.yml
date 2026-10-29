@@ -40,7 +40,7 @@ jobs:
   # Non-overrideable lint job - enforced by platform team
   lint:
     docker:
-      - image: cimg/node:20.11
+      - image: cimg/node:22.23.4
     steps:
       - checkout
       - run:
@@ -56,7 +56,7 @@ jobs:
   # Default build job - can be overridden by teams
   build:
     docker:
-      - image: cimg/node:20.11
+      - image: cimg/node:22.23.4
     steps:
       - checkout
       - run:
@@ -74,7 +74,7 @@ jobs:
   # Default test job - can be overridden by teams
   test:
     docker:
-      - image: cimg/node:20.11
+      - image: cimg/node:22.23.4
     steps:
       - checkout
       - run:
@@ -92,7 +92,7 @@ jobs:
   # Default deploy job - can be overridden by teams
   deploy:
     docker:
-      - image: cimg/node:20.11
+      - image: cimg/node:22.23.4
     steps:
       - checkout
       - run:
